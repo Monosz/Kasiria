@@ -114,7 +114,6 @@ public class TransactionFragment extends Fragment {
         tvTransactionNone.setOnClickListener(v -> {
             Log.d("TransactionNone", "Clicked");
             TransactionDialogFragment dialogFragment = TransactionDialogFragment.newInstance(null);
-            dialogFragment.setTransactionUpdateListener(this);
             dialogFragment.show(getChildFragmentManager(), "transaction_add_dialog");
         });
 
@@ -148,15 +147,5 @@ public class TransactionFragment extends Fragment {
         super.onResume();
         Log.d("TransactionFragment onResume", "onResume: Resumed");
         loadTransactions(bid);
-    }
-
-    @Override
-    public void onTransactionUpdated() {
-        Log.d("TransactionFragment", "onTransactionUpdated: Updated");
-//        loadTransactions(bid);
-//        FragmentTransaction ft = requireActivity().getSupportFragmentManager().beginTransaction();
-//        ft.detach(this).attach(this).commit();
-
-        onResume();
     }
 }
