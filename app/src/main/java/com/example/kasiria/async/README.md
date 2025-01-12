@@ -1,0 +1,1 @@
+`async/` codes taken from https://github.com/DantSu/ESCPOS-ThermalPrinter-Android example use

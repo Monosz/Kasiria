@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/transactionDPdf"
+        android:title="PDF"
+        android:icon="@drawable/ic_pdf" />
+
+    <item
+        android:id="@+id/transactionDPrint"
+        android:title="Print"
+        android:icon="@drawable/ic_print" />
+
+
+    <item
+        android:id="@+id/transactionDCheckout"
+        android:title="Checkout"
+        android:icon="@drawable/ic_checkout" />
+
+</menu>
