@@ -49,4 +49,5 @@ dependencies {
     implementation(libs.logging.interceptor)
 
     implementation(libs.escpos.thermalprinter.android)
+    implementation(libs.glide)
 }

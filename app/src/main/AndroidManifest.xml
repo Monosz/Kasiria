@@ -22,6 +22,9 @@
         android:theme="@style/Theme.Kasiria"
         tools:targetApi="31">
         <activity
+            android:name=".ui.GlideImageActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.dashboard.TransactionDetailActivity"
             android:exported="false" />
         <activity

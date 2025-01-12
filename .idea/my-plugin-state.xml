@@ -3,6 +3,5 @@
   <component name="PluginState">
     <option name="returnType" value="Call&lt;T&gt;" />
     <option name="returnTypeClassesDirectory" value="$PROJECT_DIR$" />
-    <option name="returnTypeClassInfoList" value="[{&quot;className&quot;:&quot;README&quot;,&quot;classExtension&quot;:&quot;md&quot;}]" />
   </component>
 </project>
