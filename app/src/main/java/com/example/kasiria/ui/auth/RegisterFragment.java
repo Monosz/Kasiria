@@ -3,13 +3,9 @@ package com.example.kasiria.ui.auth;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +14,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
 
 import com.example.kasiria.R;
 import com.example.kasiria.model.Business;
@@ -35,8 +33,6 @@ public class RegisterFragment extends Fragment {
 
     private EditText etRegisterUserEmail, etRegisterUserPassword, etRegisterUserPhone;
     private EditText etRegisterBusinessName, etRegisterBusinessAddress;
-    private TextView tvRegisterToLogin;
-    private Button btnRegisterSubmit;
     private CheckBox cbRegisterAgree;
 
     @Override
@@ -62,66 +58,24 @@ public class RegisterFragment extends Fragment {
 
         cbRegisterAgree = view.findViewById(R.id.cbRegisterAgree);
 
+        // Set checkbox blue text
         SpannableString spannableString = new SpannableString(cbRegisterAgree.getText());
 
         int start1 = cbRegisterAgree.getText().toString().indexOf("Syarat dan Ketentuan");
         int end1 = start1 + "Syarat dan Ketentuan".length();
-        spannableString.setSpan(new ForegroundColorSpan(Color.BLUE), start1, end1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); // Change to your desired color
+        spannableString.setSpan(new ForegroundColorSpan(Color.BLUE), start1, end1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         int start2 = cbRegisterAgree.getText().toString().indexOf("Kebijakan Privasi");
         int end2 = start2 + "Kebijakan Privasi".length();
-        spannableString.setSpan(new ForegroundColorSpan(Color.BLUE), start2, end2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); // Change to your desired color
+        spannableString.setSpan(new ForegroundColorSpan(Color.BLUE), start2, end2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         cbRegisterAgree.setText(spannableString);
 
-        tvRegisterToLogin = view.findViewById(R.id.tvRegisterToLogin);
-        tvRegisterToLogin.setOnClickListener(v -> {
-            toLogin();
-        });
+        Button btnRegisterSubmit = view.findViewById(R.id.btnRegisterSubmit);
+        btnRegisterSubmit.setOnClickListener(v -> register());
 
-        btnRegisterSubmit = view.findViewById(R.id.btnRegisterSubmit);
-        btnRegisterSubmit.setOnClickListener(v -> {
-            String userEmail = etRegisterUserEmail.getText().toString().trim();
-            String userPassword = etRegisterUserPassword.getText().toString().trim();
-            String userPhone = etRegisterUserPhone.getText().toString().trim();
-
-            String businessName = etRegisterBusinessName.getText().toString().trim();
-            String businessAddress = etRegisterBusinessAddress.getText().toString().trim();
-
-            boolean isChecked = cbRegisterAgree.isChecked();
-
-            if (userEmail.isEmpty() || userPassword.isEmpty() || userPhone.isEmpty() || businessName.isEmpty() || businessAddress.isEmpty()) {
-                Toast.makeText(context, "Semua kolom wajib diisi", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (!isChecked) {
-                Toast.makeText(context, "Anda harus menyetujui syarat dan ketentuan terlebih dahulu", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            auth.createUserWithEmailAndPassword(userEmail, userPassword)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            AuthResult res = task.getResult();
-                            if (res != null && res.getUser() != null) {
-                                User user = new User(res.getUser().getUid(), userEmail, userPhone);
-                                saveUserToFirestore(user);
-                                Business business = new Business(businessName, businessAddress, user.getId());
-                                saveBusinessToFirestore(business);
-                            }
-                        } else {
-                            Exception ex = task.getException();
-                            if (ex instanceof FirebaseAuthUserCollisionException) {
-                                Toast.makeText(context, "Email sudah terdaftar", Toast.LENGTH_SHORT).show();
-                                return;
-                            } else {
-                                Toast.makeText(context, "Terjadi kesalahan saat mendaftarkan pengguna, silahkan coba lagi", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-                        }
-                    });
-        });
+        TextView tvRegisterToLogin = view.findViewById(R.id.tvRegisterToLogin);
+        tvRegisterToLogin.setOnClickListener(v -> toLogin());
 
         return view;
     }
@@ -130,6 +84,47 @@ public class RegisterFragment extends Fragment {
         if (getActivity() instanceof AuthActivity) {
             ((AuthActivity) getActivity()).loadFragment(new LoginFragment(), "Login");
         }
+    }
+
+    private void register() {
+        String userEmail = etRegisterUserEmail.getText().toString().trim();
+        String userPassword = etRegisterUserPassword.getText().toString().trim();
+        String userPhone = etRegisterUserPhone.getText().toString().trim();
+
+        String businessName = etRegisterBusinessName.getText().toString().trim();
+        String businessAddress = etRegisterBusinessAddress.getText().toString().trim();
+
+        boolean isChecked = cbRegisterAgree.isChecked();
+
+        if (userEmail.isEmpty() || userPassword.isEmpty() || userPhone.isEmpty() || businessName.isEmpty() || businessAddress.isEmpty()) {
+            Toast.makeText(context, "Semua kolom wajib diisi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!isChecked) {
+            Toast.makeText(context, "Anda harus menyetujui syarat dan ketentuan terlebih dahulu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        auth.createUserWithEmailAndPassword(userEmail, userPassword)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        AuthResult res = task.getResult();
+                        if (res != null && res.getUser() != null) {
+                            User user = new User(res.getUser().getUid(), userEmail, userPhone);
+                            saveUserToFirestore(user);
+                            Business business = new Business(businessName, businessAddress, user.getId());
+                            saveBusinessToFirestore(business);
+                        }
+                    } else {
+                        Exception ex = task.getException();
+                        if (ex instanceof FirebaseAuthUserCollisionException) {
+                            Toast.makeText(context, "Email sudah terdaftar", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(context, "Terjadi kesalahan saat mendaftarkan pengguna, silahkan coba lagi", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     private void saveUserToFirestore(User user) {

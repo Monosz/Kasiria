@@ -26,6 +26,17 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/tvLoginHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"
+                android:text="Masuk ke Kasiria"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilLoginEmail"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -66,8 +77,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="8dp"
-                android:gravity="right"
-                android:text="Lupa kata sandi?" />
+                android:gravity="end"
+                android:text="Lupa kata sandi?"
+                android:textStyle="italic" />
 
             <Button
                 android:id="@+id/btnLoginSubmit"

@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.kasiria.R;
 import com.example.kasiria.ui.dashboard.DashboardActivity;
+import com.example.kasiria.utils.Auth;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
@@ -32,8 +33,6 @@ public class LoginFragment extends Fragment {
     private Context context;
 
     private EditText etLoginEmail, etLoginPassword;
-    private TextView tvLoginToRegister, tvLoginForgotPassword;
-    private Button btnLoginSubmit;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,21 +47,21 @@ public class LoginFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_login, container, false);
         context = view.getContext();
 
-        tvLoginToRegister = view.findViewById(R.id.tvLoginToRegister);
+        etLoginEmail = view.findViewById(R.id.etLoginEmail);
+        etLoginPassword = view.findViewById(R.id.etLoginPassword);
+
+        Button btnLoginSubmit = view.findViewById(R.id.btnLoginSubmit);
+        btnLoginSubmit.setOnClickListener(v -> login());
+
+        TextView tvLoginForgotPassword = view.findViewById(R.id.tvLoginForgotPassword);
+        tvLoginForgotPassword.setOnClickListener(v -> forgotPassword());
+
+        TextView tvLoginToRegister = view.findViewById(R.id.tvLoginToRegister);
         tvLoginToRegister.setOnClickListener(v -> {
             if (getActivity() instanceof AuthActivity) {
                 ((AuthActivity) getActivity()).loadFragment(new RegisterFragment(), "Register");
             }
         });
-
-        etLoginEmail = view.findViewById(R.id.etLoginEmail);
-        etLoginPassword = view.findViewById(R.id.etLoginPassword);
-
-        btnLoginSubmit = view.findViewById(R.id.btnLoginSubmit);
-        btnLoginSubmit.setOnClickListener(v -> login());
-
-        tvLoginForgotPassword = view.findViewById(R.id.tvLoginForgotPassword);
-        tvLoginForgotPassword.setOnClickListener(v -> forgotPassword());
 
         return view;
     }
@@ -83,30 +82,25 @@ public class LoginFragment extends Fragment {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-
-                        setSharedPref(auth.getCurrentUser().getUid());
-
-
+                        setSharedPref(Auth.getUid());
                     } else {
                         Exception ex = task.getException();
                         if (ex instanceof FirebaseAuthInvalidUserException) {
                             Toast.makeText(context, "Akun tidak ditemukan", Toast.LENGTH_SHORT).show();
-                            return;
                         } else if (ex instanceof FirebaseAuthInvalidCredentialsException) {
                             Toast.makeText(context, "Email atau kata sandi salah", Toast.LENGTH_SHORT).show();
-                            return;
                         } else {
                             Toast.makeText(context, "Terjadi kesalahan saat login, silahkan coba lagi", Toast.LENGTH_SHORT).show();
-                            return;
                         }
                     }
                 });
     }
 
     private void setSharedPref(String uid) {
-        SharedPreferences pref = requireActivity().getSharedPreferences("user", Context.MODE_PRIVATE);
+        SharedPreferences pref = context.getSharedPreferences("user", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
         editor.putString("uid", uid);
+        editor.apply();
 
         FirebaseFirestore.getInstance().collection("businesses")
                 .whereEqualTo("ownerId", uid)
@@ -121,18 +115,28 @@ public class LoginFragment extends Fragment {
                             editor.putString("bid", businessId);
                             editor.apply();
 
-                            Intent intent = new Intent(requireContext(), DashboardActivity.class);
-                            requireActivity().startActivity(intent);
+                            Intent intent = new Intent(context, DashboardActivity.class);
+                            context.startActivity(intent);
                             requireActivity().finish();
                         } else {
+                            clearUser();
+
                             Toast.makeText(context, "Terjadi kesalahan saat mengambil data usaha pengguna", Toast.LENGTH_SHORT).show();
-                            Log.e("LoginFragment", "No business found for user: " + uid);
+                            Log.e("LoginFragment", "No business found for user: " + uid + ", " + task.getException());
                         }
                     } else {
+                        clearUser();
+
                         Toast.makeText(context, "Terjadi kesalahan saat mengambil data usaha pengguna", Toast.LENGTH_SHORT).show();
                         Log.e("LoginFragment", "Error getting businesses: ", task.getException());
                     }
                 });
+    }
+
+    private void clearUser() {
+        // Signs out the user and clear sharedPref data
+        auth.signOut();
+        context.getSharedPreferences("user", Context.MODE_PRIVATE).edit().clear().apply();
     }
 
     private void forgotPassword() {

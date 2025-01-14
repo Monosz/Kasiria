@@ -14,11 +14,10 @@ import androidx.fragment.app.FragmentManager;
 
 import com.example.kasiria.R;
 import com.example.kasiria.ui.dashboard.DashboardActivity;
-import com.google.firebase.auth.FirebaseAuth;
+import com.example.kasiria.utils.Auth;
 
 public class AuthActivity extends AppCompatActivity {
     private Toolbar toolbar;
-    private FirebaseAuth auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +30,8 @@ public class AuthActivity extends AppCompatActivity {
             return insets;
         });
 
-        auth = FirebaseAuth.getInstance();
-        if (auth.getCurrentUser() != null) {
+        // Failsafe for main's redirect if user is already logged in
+        if (Auth.isLoggedIn()) {
             startActivity(new Intent(this, DashboardActivity.class));
             finish();
             return;
@@ -42,6 +41,7 @@ public class AuthActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
+        // Handle fragment loading from passed intent
         if (savedInstanceState == null) {
             String fragment = getIntent().getStringExtra("fragment");
             if (fragment == null) {
@@ -54,6 +54,7 @@ public class AuthActivity extends AppCompatActivity {
         }
     }
 
+    // Load fragment and set toolbar title
     public void loadFragment(Fragment fragment, String title) {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.flAuth, fragment)
@@ -61,6 +62,8 @@ public class AuthActivity extends AppCompatActivity {
         toolbar.setTitle(title);
     }
 
+    // Overrides back press to go to previous stack if it exists
+    @Override
     public void onBackPressed() {
         FragmentManager fragmentManager = getSupportFragmentManager();
         if (fragmentManager.getBackStackEntryCount() > 0) {
