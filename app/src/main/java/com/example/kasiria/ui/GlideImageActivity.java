@@ -26,6 +26,6 @@ public class GlideImageActivity extends AppCompatActivity {
         });
 
         ImageView ivGlideImage = findViewById(R.id.ivGlideImage);
-        Glide.with(this).load(getIntent().getIntExtra("image", 0)).into(ivGlideImage);
+        Glide.with(this).load(getIntent().getIntExtra("image", R.drawable.ic_search_off)).into(ivGlideImage);
     }
 }

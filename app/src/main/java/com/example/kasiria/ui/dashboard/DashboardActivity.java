@@ -11,6 +11,7 @@
 
     import androidx.annotation.NonNull;
     import androidx.appcompat.app.AppCompatActivity;
+    import androidx.appcompat.app.AppCompatDelegate;
     import androidx.appcompat.widget.Toolbar;
     import androidx.fragment.app.Fragment;
 
@@ -113,6 +114,10 @@
         @Override
         public void onStart() {
             super.onStart();
+            // Force light mode
+            // MainActivity set fails; if user reload when already logged in
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
             if (!Auth.isLoggedIn()) {
                 startActivity(new Intent(this, AuthActivity.class));
                 finish();
