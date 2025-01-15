@@ -18,14 +18,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.kasiria.R;
 import com.example.kasiria.model.Product;
 import com.example.kasiria.ui.dashboard.ProductDialogFragment;
+import com.example.kasiria.utils.Format;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductHolder> {
-    private List<Product> products;
+    private final List<Product> products;
     private Context context;
     private FirebaseFirestore db;
 
@@ -47,19 +46,8 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductH
     public void onBindViewHolder(@NonNull ProductHolder holder, int position) {
         Product product = products.get(position);
 
-        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-        currencyFormat.setMaximumFractionDigits(0);
-
-        int img = product.isAvailable() ? R.drawable.ic_circle_green : R.drawable.ic_circle_red;
-        holder.ivProductAvailable.setImageResource(img);
-        holder.ivProductAvailable.setOnClickListener(v -> {
-            int img2 = holder.ivProductAvailable.getDrawable() == context.getDrawable(R.drawable.ic_circle_green) ?
-                    R.drawable.ic_circle_red : R.drawable.ic_circle_green;
-            holder.ivProductAvailable.setImageResource(img2);
-        });
-
         holder.tvIProductName.setText(product.getName());
-        holder.tvIProductPrice.setText(currencyFormat.format(product.getPrice()));
+        holder.tvIProductPrice.setText(Format.formatCurrency(product.getPrice()));
         holder.ibIProductRemove.setOnClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle("Hapus Produk");

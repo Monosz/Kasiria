@@ -1,5 +1,6 @@
 package com.example.kasiria.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,13 +12,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.kasiria.R;
 import com.example.kasiria.model.Product;
+import com.example.kasiria.utils.Format;
 
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class TransactionDetailAdapter extends RecyclerView.Adapter<TransactionDetailAdapter.TransactionDetailHolder> {
-    private List<Product> products;
+    private final List<Product> products;
     private Context context;
 
     public TransactionDetailAdapter(List<Product> products) {
@@ -33,16 +33,14 @@ public class TransactionDetailAdapter extends RecyclerView.Adapter<TransactionDe
         return new TransactionDetailHolder(view);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull TransactionDetailAdapter.TransactionDetailHolder holder, int position) {
         Product product = products.get(position);
 
-        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-        currencyFormat.setMaximumFractionDigits(0);
-
         holder.tvTransactionDName.setText(product.getName());
-        holder.tvTransactionDQuantityPrice.setText(product.getQuantity() + " x " + currencyFormat.format(product.getPrice()));
-        holder.tvTransactionDTotal.setText(currencyFormat.format(product.getQuantity() * product.getPrice()));
+        holder.tvTransactionDQuantityPrice.setText(product.getQuantity() + " x " + Format.formatCurrency(product.getPrice()));
+        holder.tvTransactionDTotal.setText(Format.formatCurrency(product.getQuantity() * product.getPrice()));
     }
 
     @Override

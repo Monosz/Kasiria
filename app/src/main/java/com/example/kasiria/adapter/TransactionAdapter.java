@@ -17,18 +17,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.kasiria.R;
 import com.example.kasiria.model.Transaction;
 import com.example.kasiria.ui.dashboard.TransactionDetailActivity;
+import com.example.kasiria.utils.Format;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TransactionHolder> {
-    private List<Transaction> transactions;
+    private final List<Transaction> transactions;
     private Context context;
-    private Type type;
-    private FirebaseFirestore db;
+    private final Type type;
+    private final FirebaseFirestore db;
 
     public enum Type { TRANSACTION, HISTORY }
 
@@ -51,23 +49,19 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     public void onBindViewHolder(@NonNull TransactionHolder holder, int position) {
         Transaction transaction = transactions.get(position);
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
         String date;
         if (this.type == Type.TRANSACTION) {
-            date = dateFormat.format(transaction.getCreatedAt().toDate());
+            date = Format.formatDate(transaction.getCreatedAt().toDate());
             holder.tvTransactionSubtotal.setVisibility(View.GONE);
         } else { // Type.HISTORY
-            date = dateFormat.format(transaction.getCompletedAt().toDate());
+            date = Format.formatDate(transaction.getCompletedAt().toDate());
             holder.tvTransactionTable.setVisibility(View.GONE);
             holder.ibTransactionRemove.setVisibility(View.GONE);
         }
 
-        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-        currencyFormat.setMaximumFractionDigits(0);
-
         holder.tvTransactionTable.setText(String.valueOf(transaction.getTableNo()));
         holder.tvTransactionTimestamp.setText(date);
-        holder.tvTransactionSubtotal.setText(currencyFormat.format(transaction.getSubtotal()));
+        holder.tvTransactionSubtotal.setText(Format.formatCurrency(transaction.getSubtotal()));
 
         holder.ibTransactionRemove.setOnClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
