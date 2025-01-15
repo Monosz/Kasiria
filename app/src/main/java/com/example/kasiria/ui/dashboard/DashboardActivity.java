@@ -92,7 +92,7 @@
             fabDashboard.setOnTouchListener((v, event) -> fabMovement(v, event));
         }
 
-        private void loadFragment(Fragment fragment, String title) {
+        public void loadFragment(Fragment fragment, String title) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.flDashboard, fragment)
                     .addToBackStack(null)

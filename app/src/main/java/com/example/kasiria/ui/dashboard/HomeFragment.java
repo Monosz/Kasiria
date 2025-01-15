@@ -1,36 +1,39 @@
 package com.example.kasiria.ui.dashboard;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-
 import com.example.kasiria.R;
+import com.example.kasiria.ui.auth.AuthActivity;
+import com.example.kasiria.utils.Auth;
 import com.example.kasiria.utils.Format;
 import com.google.firebase.Timestamp;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
     private TextView tvHomeHello, tvHomeUsername;
     private FirebaseFirestore db;
-    private FirebaseAuth auth;
 
     private TextView tvHomeDaily, tvHomeWeekly, tvHomeYesterday, tvHomeLastWeek;
 
@@ -39,7 +42,6 @@ public class HomeFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         db = FirebaseFirestore.getInstance();
-        auth = FirebaseAuth.getInstance();
     }
 
     @Override
@@ -75,15 +77,42 @@ public class HomeFragment extends Fragment {
         tvHomeHello.setText(hello);
 
         tvHomeUsername = view.findViewById(R.id.tvHomeUsername);
-        String uid = auth.getCurrentUser().getUid();
+        String uid = Auth.getUid();
         db.collection("users").document(uid).get().addOnSuccessListener(task -> {
-            tvHomeUsername.setText(task.get("name").toString());
+            tvHomeUsername.setText(Objects.requireNonNull(task.get("name")).toString());
+        });
+
+        ImageButton ibHome = view.findViewById(R.id.ibHome);
+
+        ImageButton ibHomeToProduct = view.findViewById(R.id.ibHomeToProduct);
+        ibHomeToProduct.setOnClickListener(v -> {
+            ((DashboardActivity)requireActivity()).loadFragment(new ProductFragment(), "Produk");
+        });
+
+        ImageButton ibHomeToTransaction = view.findViewById(R.id.ibHomeToTransaction);
+        ibHomeToTransaction.setOnClickListener(v -> {
+            ((DashboardActivity)requireActivity()).loadFragment(new TransactionFragment(), "Transaction");
+        });
+
+        ImageButton ibHomeToHistory = view.findViewById(R.id.ibHomeToHistory);
+        ibHomeToHistory.setOnClickListener(v -> {
+            ((DashboardActivity)requireActivity()).loadFragment(new HistoryFragment(), "Riwayat");
+        });
+
+        ImageButton ibHomeToProfile = view.findViewById(R.id.ibHomeToProfile);
+        ibHomeToProfile.setOnClickListener(v -> {
+            ((DashboardActivity)requireActivity()).loadFragment(new ProfileFragment(), "Profil");
         });
 
         SharedPreferences pref = context.getSharedPreferences("user", Context.MODE_PRIVATE);
         String bid = pref.getString("bid", null);
         if (bid != null) {
             getSalesData(bid);
+        } else {
+            Toast.makeText(context, "Terjadi kesalahan, mohon login kembali", Toast.LENGTH_SHORT).show();
+            Auth.signOut();
+            context.startActivity(new Intent(context, AuthActivity.class));
+            requireActivity().finish();
         }
 
         return view;
@@ -138,9 +167,10 @@ public class HomeFragment extends Fragment {
             }
 
             int daily = 0, weekly = 0, yesterdayTotal = 0, lastWeekTotal = 0;
+            assert value != null;
             for (QueryDocumentSnapshot document : value) {
                 Timestamp createdAtTimestamp = document.getTimestamp("createdAt");
-                int subtotal = document.getLong("subtotal").intValue();
+                int subtotal = Objects.requireNonNull(document.getLong("subtotal")).intValue();
 
                 if (createdAtTimestamp != null) {
                     Date createdAt = createdAtTimestamp.toDate();

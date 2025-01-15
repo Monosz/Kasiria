@@ -17,4 +17,10 @@ public class Auth {
         }
         return "";
     }
+
+    public static void signOut() {
+        if (isLoggedIn()) {
+            auth.signOut();
+        }
+    }
 }
