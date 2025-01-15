@@ -16,9 +16,9 @@
 
     import com.example.kasiria.R;
     import com.example.kasiria.ui.auth.AuthActivity;
+    import com.example.kasiria.utils.Auth;
     import com.google.android.material.bottomnavigation.BottomNavigationView;
     import com.google.android.material.floatingactionbutton.FloatingActionButton;
-    import com.google.firebase.auth.FirebaseAuth;
 
     public class DashboardActivity extends AppCompatActivity {
         private BottomNavigationView nav;
@@ -28,32 +28,26 @@
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-//            EdgeToEdge.enable(this);
             setContentView(R.layout.activity_dashboard);
-//            ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-//                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-//                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-//                return insets;
-//            });
 
             nav = findViewById(R.id.navDashboard);
             fabDashboard = findViewById(R.id.fabDashboard);
             tbDashboard = findViewById(R.id.tbDashboard);
 
-            replaceFragment(new HomeFragment(), "Beranda");
+            loadFragment(new HomeFragment(), "Beranda");
 
             nav.setOnNavigationItemSelectedListener(item -> {
                 int selected = item.getItemId();
                 if (selected == R.id.navHome) {
-                    replaceFragment(new HomeFragment(), "Beranda");
+                    loadFragment(new HomeFragment(), "Beranda");
                 } else if (selected == R.id.navProduct) {
-                    replaceFragment(new ProductFragment(), "Produk");
+                    loadFragment(new ProductFragment(), "Produk");
                 } else if (selected == R.id.navTransaction) {
-                    replaceFragment(new TransactionFragment(), "Transaksi");
+                    loadFragment(new TransactionFragment(), "Transaksi");
                 } else if (selected == R.id.navHistory) {
-                    replaceFragment(new HistoryFragment(), "Riwayat");
+                    loadFragment(new HistoryFragment(), "Riwayat");
                 } else if (selected == R.id.navProfile) {
-                    replaceFragment(new ProfileFragment(), "Profil");
+                    loadFragment(new ProfileFragment(), "Profil");
                 }
                 return true;
             });
@@ -98,32 +92,28 @@
             fabDashboard.setOnTouchListener((v, event) -> fabMovement(v, event));
         }
 
-        private void replaceFragment(Fragment fragment, String title) {
+        private void loadFragment(Fragment fragment, String title) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.flDashboard, fragment)
                     .addToBackStack(null)
                     .commit();
-            if (title.equals("Beranda")) {
-                tbDashboard.setTitle("Kasiria");
-//                tbDashboard.setTitleTextAppearance(this, R.style.AppBarTitleKasiria);
-            } else {
-                tbDashboard.setTitle(title);
-            }
+            tbDashboard.setTitle(title.equals("Beranda") ? "Kasiria" : title);
 
-            fabDashboard.hide();
             if (fragment instanceof ProductFragment || fragment instanceof TransactionFragment) {
                 fabDashboard.setImageResource(R.drawable.ic_add);
                 fabDashboard.show();
             } else if (fragment instanceof ProfileFragment) {
                 fabDashboard.setImageResource(R.drawable.ic_info);
                 fabDashboard.show();
+            } else {
+                fabDashboard.hide();
             }
         }
 
         @Override
         public void onStart() {
             super.onStart();
-            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            if (!Auth.isLoggedIn()) {
                 startActivity(new Intent(this, AuthActivity.class));
                 finish();
             }
@@ -132,35 +122,15 @@
         @Override
         public boolean onCreateOptionsMenu(Menu menu) {
             getMenuInflater().inflate(R.menu.menu_nav, menu);
-//            return super.onCreateOptionsMenu(menu);
             return true;
         }
 
         @Override
         public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-//            int selected = item.getItemId();
-//
-//            if (selected == R.id.navHome) {
-//                replaceFragment(new HomeFragment());
-//                return true;
-//            } else if (selected == R.id.navProduct) {
-//                replaceFragment(new ProductFragment());
-//                return true;
-//            } else if (selected == R.id.navTransaction) {
-//                replaceFragment(new TransactionFragment());
-//                return true;
-//            } else if (selected == R.id.navHistory) {
-//                replaceFragment(new HistoryFragment());
-//                return true;
-//            } else if (selected == R.id.navProfile) {
-//                replaceFragment(new ProfileFragment());
-//                return true;
-//            } else {
-//                replaceFragment(new HomeFragment());
-//            }
-//
             return super.onOptionsItemSelected(item);
         }
+        
+        // FAB positioning
 
         private float startX, startY;
         private float xDelta, yDelta;
