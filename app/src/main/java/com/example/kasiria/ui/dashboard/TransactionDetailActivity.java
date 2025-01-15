@@ -1,7 +1,6 @@
 package com.example.kasiria.ui.dashboard;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -10,17 +9,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -28,7 +24,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.dantsu.escposprinter.connection.DeviceConnection;
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection;
-import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnections;
 import com.example.kasiria.R;
 import com.example.kasiria.adapter.TransactionAdapter;
 import com.example.kasiria.adapter.TransactionDetailAdapter;
@@ -51,19 +46,14 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-// TODO: Clean this mess
 
 public class TransactionDetailActivity extends AppCompatActivity {
 
@@ -74,33 +64,23 @@ public class TransactionDetailActivity extends AppCompatActivity {
     private BottomNavigationView navTransactionDetail;
     private Toolbar tbTransactionDetail;
 
-    private ImageButton ibTransactionDEdit, ibTransactionDCheckout, ibTransactionDPrint, ibTransactionDPdf;
-    private TextView tvTransactionDDetail, tvTransactionDSubtotal;
+    private ImageButton ibTransactionDEdit;
+    private TextView tvTransactionDId, tvTransactionDDetail, tvTransactionDSubtotal;
     private ProgressBar pbTransactionDetail;
-    private ConstraintLayout main;
+    private View vTransactionDetailOverlay;
 
     private User user;
     private Business business;
 
     private FirebaseFirestore db;
 
-    private NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy - HH:mm");
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_transaction_detail);
-//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-//            return insets;
-//        });
 
+        // Init
         db = FirebaseFirestore.getInstance();
-        currencyFormat.setMaximumFractionDigits(0);
-        main = findViewById(R.id.main);
 
         tbTransactionDetail = findViewById(R.id.tbTransactionDetail);
         setSupportActionBar(tbTransactionDetail);
@@ -112,13 +92,13 @@ public class TransactionDetailActivity extends AppCompatActivity {
 
         rvTransactionDetail = findViewById(R.id.rvTransactionDetail);
         ibTransactionDEdit = findViewById(R.id.ibTransactionDEdit);
-//        ibTransactionDCheckout = findViewById(R.id.ibTransactionDCheckout);
-//        ibTransactionDPrint = findViewById(R.id.ibTransactionDPrint);
-//        ibTransactionDPdf = findViewById(R.id.ibTransactionDPdf);
+        tvTransactionDId = findViewById(R.id.tvTransactionDId);
         tvTransactionDDetail = findViewById(R.id.tvTransactionDDetail);
         tvTransactionDSubtotal = findViewById(R.id.tvTransactionDSubtotal);
         pbTransactionDetail = findViewById(R.id.pbTransactionDetail);
+        vTransactionDetailOverlay = findViewById(R.id.vTransactionDetailOverlay);
 
+        // Get passed transaction
         Intent i = getIntent();
         TransactionAdapter.Type type = (TransactionAdapter.Type) i.getSerializableExtra("type");
         transaction = i.getParcelableExtra("transaction");
@@ -128,25 +108,44 @@ public class TransactionDetailActivity extends AppCompatActivity {
             return;
         }
 
+        // Hide non-history function
         if (type == TransactionAdapter.Type.HISTORY) {
             ibTransactionDEdit.setVisibility(ImageButton.GONE);
-//            ibTransactionDCheckout.setVisibility(ImageButton.GONE);
             navTransactionDetail.getMenu().removeItem(R.id.transactionDCheckout);
         }
 
+        // Get user and business data
         SharedPreferences pref = getSharedPreferences("user", MODE_PRIVATE);
         String uid = pref.getString("uid", null);
         String bid = pref.getString("bid", null);
 
+        assert uid != null;
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     user = documentSnapshot.toObject(User.class);
                 });
 
+        assert bid != null;
         db.collection("businesses").document(bid).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     business = documentSnapshot.toObject(Business.class);
                 });
+
+        products = transaction.getProducts();
+        adapter = new TransactionDetailAdapter(products);
+
+        rvTransactionDetail.setAdapter(adapter);
+        rvTransactionDetail.setLayoutManager(new LinearLayoutManager(this));
+
+        tvTransactionDId.setText("ID: " + transaction.getId());
+
+        tvTransactionDDetail.setText(String.format("Meja %d @ %s", transaction.getTableNo(), Format.formatDate(transaction.getCreatedAt().toDate())));
+        tvTransactionDSubtotal.setText(Format.formatCurrency(transaction.getSubtotal()));
+
+        ibTransactionDEdit.setOnClickListener(v -> {
+            TransactionDialogFragment dialogFragment = TransactionDialogFragment.newInstance(transaction);
+            dialogFragment.show(getSupportFragmentManager(), "transaction_edit_dialog");
+        });
 
         navTransactionDetail.getMenu().setGroupCheckable(0, false, true);
         navTransactionDetail.getMenu().setGroupCheckable(0, true, true);
@@ -157,11 +156,7 @@ public class TransactionDetailActivity extends AppCompatActivity {
                 int selected = item.getItemId();
 
                 if (selected == R.id.transactionDPdf) {
-                    pbTransactionDetail.setVisibility(View.VISIBLE);
-                    main.setEnabled(false);
                     pdf();
-                    pbTransactionDetail.setVisibility(View.INVISIBLE);
-                    main.setEnabled(true);
                 } else if (selected == R.id.transactionDPrint) {
                     print();
                 } else if (selected == R.id.transactionDCheckout) {
@@ -175,32 +170,13 @@ public class TransactionDetailActivity extends AppCompatActivity {
                 return true;
             }
         });
-
-        products = transaction.getProducts();
-        adapter = new TransactionDetailAdapter(products);
-
-        tvTransactionDDetail.setText(String.format("Meja %d @ %s", transaction.getTableNo(), dateFormat.format(transaction.getCreatedAt().toDate())));
-        tvTransactionDSubtotal.setText(Format.formatCurrency(transaction.getSubtotal()));
-
-        rvTransactionDetail.setAdapter(adapter);
-        rvTransactionDetail.setLayoutManager(new LinearLayoutManager(this));
-
-        ibTransactionDEdit.setOnClickListener(v -> {
-            TransactionDialogFragment dialogFragment = TransactionDialogFragment.newInstance(transaction);
-            dialogFragment.show(getSupportFragmentManager(), "transaction_edit_dialog");
-        });
-
-//        ibTransactionDCheckout.setOnClickListener(v -> checkout(bid));
-//        ibTransactionDPrint.setOnClickListener(v -> print());
-//        ibTransactionDPdf.setOnClickListener(v -> pdf());
-
-        Log.d("Transaction Detail", "Success");
     }
 
     private void pdf() {
-        Log.d("PDF", "CLicked!");
-//        main.setEnabled(false);
-//        pbTransactionDetail.setVisibility(View.VISIBLE);
+        vTransactionDetailOverlay.setVisibility(View.VISIBLE);
+        vTransactionDetailOverlay.bringToFront();
+        pbTransactionDetail.setVisibility(View.VISIBLE);
+        pbTransactionDetail.bringToFront();
 
         Log.d("Documentero", "Clicked!");
         DocumenteroAPI documenteroAPI = RetrofitClient.getRetrofit().create(DocumenteroAPI.class);
@@ -218,36 +194,32 @@ public class TransactionDetailActivity extends AppCompatActivity {
         postData.setDocument(DOCUMENT_ID);
         postData.setApiKey(API_KEY);
 
-//        postData.setFormat("docx");
         postData.setFormat("pdf");
 
         DocumenteroPostData.Data data = new DocumenteroPostData.Data();
         data.setBusinessName(business.getName());
         data.setBusinessAddress(business.getAddress());
         data.setOrderId(transaction.getId());
-        data.setCreatedAt(dateFormat.format(transaction.getCreatedAt().toDate()));
+        data.setCreatedAt(Format.formatDate(transaction.getCreatedAt().toDate()));
 
         List<DocumenteroPostData.Product> products = new ArrayList<>();
         for (Product product : this.products) {
             DocumenteroPostData.Product p = new DocumenteroPostData.Product();
             p.setProductName(product.getName());
             p.setProductQuantity(String.valueOf(product.getQuantity()));
-            p.setProductPrice(currencyFormat.format(product.getPrice()));
-            p.setProductTotal(currencyFormat.format(product.getQuantity() * product.getPrice()));
+            p.setProductPrice(Format.formatCurrency(product.getPrice()));
+            p.setProductTotal(Format.formatCurrency(product.getQuantity() * product.getPrice()));
             products.add(p);
         }
         data.setProducts(products);
 
-        data.setSubtotal(currencyFormat.format(transaction.getSubtotal()));
+        data.setSubtotal(Format.formatCurrency(transaction.getSubtotal()));
         data.setPhoneNo(user.getPhone());
         data.setUserName(user.getName());
 
         postData.setData(data);
 
         Gson gson = new Gson();
-//        Gson gson = new GsonBuilder()
-//                .setFieldNamingPolicy(FieldNamingPolicy.IDENTITY)
-//                .create();
         String json = gson.toJson(postData);
 
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), json);
@@ -258,29 +230,33 @@ public class TransactionDetailActivity extends AppCompatActivity {
         postJson.enqueue(new Callback<DocumenteroResultData>() {
             @Override
             public void onResponse(Call<DocumenteroResultData> call, Response<DocumenteroResultData> response) {
+                vTransactionDetailOverlay.setVisibility(View.GONE);
+                pbTransactionDetail.setVisibility(View.GONE);
+
+                Log.d("Documentero Response", "res="+response.code());
                 if (response.code() == 200) {
                     DocumenteroResultData resultData = response.body();
 
+                    assert resultData != null;
                     if (resultData.getStatus() == 200) {
                         Intent intent = new Intent(Intent.ACTION_VIEW);
                         String url = resultData.getData();
-//                        intent.setData(Uri.parse(url));
                         intent.setDataAndType(Uri.parse(url), "application/pdf");
                         startActivity(intent);
                     }
                 } else {
-                    Toast.makeText(TransactionDetailActivity.this, "Terjadi kesalahan, silahkan coba lagi", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TransactionDetailActivity.this, "Error API, silahkan coba lagi", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<DocumenteroResultData> call, Throwable t) {
+                vTransactionDetailOverlay.setVisibility(View.GONE);
+                pbTransactionDetail.setVisibility(View.GONE);
+
                 Toast.makeText(TransactionDetailActivity.this, "Terjadi kesalahan, silahkan coba lagi", Toast.LENGTH_SHORT).show();
             }
         });
-
-//        main.setEnabled(true);
-//        pbTransactionDetail.setVisibility(View.INVISIBLE);
     }
 
     private void checkout(String bid) {
@@ -344,7 +320,6 @@ public class TransactionDetailActivity extends AppCompatActivity {
     }
 
     public void checkBluetoothPermissions(TransactionDetailActivity.OnBluetoothPermissionsGranted onBluetoothPermissionsGranted) {
-
         this.onBluetoothPermissionsGranted = onBluetoothPermissionsGranted;
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S && ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.BLUETOOTH}, TransactionDetailActivity.PERMISSION_BLUETOOTH);
@@ -360,43 +335,6 @@ public class TransactionDetailActivity extends AppCompatActivity {
     }
 
     private BluetoothConnection selectedDevice;
-
-    @SuppressLint("MissingPermission")
-    public void browseBluetoothDevice() {
-        this.checkBluetoothPermissions(() -> {
-            final BluetoothConnection[] bluetoothDevicesList = (new BluetoothPrintersConnections()).getList();
-
-            if (bluetoothDevicesList != null) {
-                final String[] items = new String[bluetoothDevicesList.length + 1];
-                items[0] = "Default printer";
-                int i = 0;
-                for (BluetoothConnection device : bluetoothDevicesList) {
-                    items[++i] = device.getDevice().getName();
-                }
-
-                AlertDialog.Builder alertDialog = new AlertDialog.Builder(TransactionDetailActivity.this);
-                alertDialog.setTitle("Bluetooth printer selection");
-                alertDialog.setItems(
-                        items,
-                        (dialogInterface, i1) -> {
-                            int index = i1 - 1;
-                            if (index == -1) {
-                                selectedDevice = null;
-                            } else {
-                                selectedDevice = bluetoothDevicesList[index];
-                            }
-                            Button button = (Button) findViewById(R.id.button_bluetooth_browse);
-                            button.setText(items[i1]);
-                        }
-                );
-
-                AlertDialog alert = alertDialog.create();
-                alert.setCanceledOnTouchOutside(false);
-                alert.show();
-            }
-        });
-
-    }
 
     public void printBluetooth() {
         Log.d("Printer", "Entered printBluetooth()");
