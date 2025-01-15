@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ProductDialogFragment extends DialogFragment {
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Context context;
     private String bid;
 
@@ -45,7 +44,7 @@ public class ProductDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_product, null);
+        View view = getLayoutInflater().inflate(R.layout.dialog_product, null);
         context = view.getContext();
 
         ImageButton ibProductClose = view.findViewById(R.id.ibProductClose);
@@ -127,5 +126,6 @@ public class ProductDialogFragment extends DialogFragment {
         if (isAdded() && getDialog() != null && getDialog().isShowing()) {
             dismiss();
         }
+        ((DashboardActivity)requireActivity()).loadFragment(new ProductFragment(), "Produk");
     }
 }

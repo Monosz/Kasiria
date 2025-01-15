@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.kasiria.R;
 import com.example.kasiria.model.Product;
 import com.example.kasiria.ui.dashboard.ProductDialogFragment;
+import com.example.kasiria.ui.dashboard.ProductFragment;
 import com.example.kasiria.utils.Format;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -59,6 +60,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductH
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
                                 Toast.makeText(context, String.format("Produk %s berhasil dihapus", product.getName()), Toast.LENGTH_SHORT).show();
+
+                                // Force refresh
+                                ((FragmentActivity)context).getSupportFragmentManager()
+                                        .beginTransaction().replace(R.id.flDashboard, new ProductFragment())
+                                        .commit();
                             } else {
                                 Toast.makeText(context, "Terjadi kesalahan saat menghapus produk " + product.getName() , Toast.LENGTH_SHORT).show();
                             }

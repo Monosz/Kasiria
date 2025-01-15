@@ -12,11 +12,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.kasiria.R;
 import com.example.kasiria.model.Transaction;
 import com.example.kasiria.ui.dashboard.TransactionDetailActivity;
+import com.example.kasiria.ui.dashboard.TransactionFragment;
 import com.example.kasiria.utils.Format;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -74,6 +76,11 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
                                 Toast.makeText(context, "Transaksi berhasil dihapus", Toast.LENGTH_SHORT).show();
+
+                                // Force refresh
+                                ((FragmentActivity)context).getSupportFragmentManager()
+                                        .beginTransaction().replace(R.id.flDashboard, new TransactionFragment())
+                                        .commit();
                             } else {
                                 Toast.makeText(context, "Terjadi kesalahan saat menghapus transaksi" , Toast.LENGTH_SHORT).show();
                             }

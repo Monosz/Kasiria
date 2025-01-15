@@ -136,9 +136,17 @@ public class TransactionFragment extends Fragment {
                             transactions.add(doc.toObject(Transaction.class));
                         }
                     }
-                    Log.d("Transaction size", "x " + transactions.size());
                     adapter.notifyDataSetChanged();
-                    tvTransactionNone.setVisibility(transactions.isEmpty() ? View.VISIBLE : View.GONE);
+                });
+
+        // Display empty message
+        // TODO: Find better/cost-efficient solution?
+        db.collection("businesses").document(bid)
+                .collection("transactions").get()
+                .addOnCompleteListener(task -> {
+                    if (task.getResult() != null) {
+                        tvTransactionNone.setVisibility(transactions.isEmpty() ? View.VISIBLE : View.GONE);
+                    }
                 });
     }
 

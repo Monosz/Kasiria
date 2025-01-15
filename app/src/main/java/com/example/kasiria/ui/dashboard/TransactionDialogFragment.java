@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 public class TransactionDialogFragment extends DialogFragment {
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Context context;
     private List<Product> products;
     private TransactionProductAdapter adapter;
@@ -53,7 +54,7 @@ public class TransactionDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_transaction, null);
+        View view = getLayoutInflater().inflate(R.layout.dialog_transaction, null);
         context = view.getContext();
 
         ImageButton ibTransactionPClose = view.findViewById(R.id.ibTransactionPClose);
@@ -114,9 +115,15 @@ public class TransactionDialogFragment extends DialogFragment {
                             }
                         });
 
-        int spanCount = 2; // TODO: Adjust the number of columns to screen width
+        // Set transaction product based on screen width
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+
+        int spanCount = (int) (dpWidth / 240);
+        spanCount = Math.max(spanCount, 2);
+        spanCount = Math.min(spanCount, 4);
         rvTransactionP.setLayoutManager(new GridLayoutManager(context, spanCount));
-//        rvTransactionP.setLayoutManager(new LinearLayoutManager(context));
+        // rvTransactionP.setLayoutManager(new LinearLayoutManager(context));
         rvTransactionP.setAdapter(adapter);
 
         rvTransactionP.post(() -> Log.d("RVHeight", "Height: " + rvTransactionP.getHeight()));
@@ -124,7 +131,12 @@ public class TransactionDialogFragment extends DialogFragment {
         ibTransactionPClose.setOnClickListener(v -> safelyDismiss());
 
         btnTransactionPSubmit.setOnClickListener(v -> {
-            int tableNo = Integer.parseInt(etTransactionPTableNo.getText().toString());
+            String tableNoStr = etTransactionPTableNo.getText().toString();
+            if (tableNoStr.isEmpty()) {
+                Toast.makeText(context, "Nomor meja harus diisi", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int tableNo = Integer.parseInt(tableNoStr);
 
             if (transaction == null) {
                 Transaction t = new Transaction(tableNo, getUpdatedProducts());
@@ -138,7 +150,7 @@ public class TransactionDialogFragment extends DialogFragment {
                                 docRef.set(t).addOnCompleteListener(aTask -> {
 
                                     Toast.makeText(context, "Berhasil membuat transaksi", Toast.LENGTH_SHORT).show();
-                                    safelyDismiss();
+                                    safelyDismiss("new");
                                 });
                             } else {
                                 Toast.makeText(context, "Terjadi kesalahan saat membuat transaksi", Toast.LENGTH_SHORT).show();
@@ -170,7 +182,7 @@ public class TransactionDialogFragment extends DialogFragment {
                                     transactionDocRef.update("subtotal", subtotal);
 
 
-                                    safelyDismiss();
+                                    safelyDismiss("update");
                                 }
                             } else {
                                 Toast.makeText(context, "Terjadi kesalahan saat mengubah transaksi", Toast.LENGTH_SHORT).show();
@@ -196,6 +208,15 @@ public class TransactionDialogFragment extends DialogFragment {
     private void safelyDismiss() {
         if (isAdded() && getDialog() != null && getDialog().isShowing()) {
             dismiss();
+        }
+    }
+
+    private void safelyDismiss(String type) {
+        safelyDismiss();
+        if (type.equals("new")) {
+            ((DashboardActivity)requireActivity()).loadFragment(new TransactionFragment(), "Transaksi");
+        } else {
+            requireActivity().finish();
         }
     }
 }
